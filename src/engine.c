@@ -9,6 +9,9 @@
 #define ENGINE_WINDOW_PROC_ADDRESS ((uintptr_t)0x613D32)
 #define ENGINE_VIDEO_RESET_ADDRESS ((uintptr_t)0x6547C8)
 
+#define ENGINE_VIDEO_MODE_STRIDE 0x5F0u
+#define ENGINE_VIDEO_PRESENT_OFFSET 0x5ACu
+
 static const unsigned char engine_build_signature[] = {0xC7, 0x05, 0x90, 0xC2, 0x90, 0x00, 0x3C, 0x00, 0x00, 0x00};
 static const unsigned char engine_window_mode_original[] = {0x0F, 0xBE, 0x87, 0x90, 0x00, 0x00, 0x00};                                                   // movsx eax, byte ptr [edi + 0x90]
 static const unsigned char engine_window_mode_borderless[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0x90, 0x90};                                                 // mov eax, 1; nop; nop
@@ -77,6 +80,11 @@ typedef struct {
     unsigned char bytes[sizeof(engine_reset_template)];
     SIZE_T size;
 } EngineResetCode;
+
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+} EngineResolution;
 
 static int engine_verify_build(HANDLE process) {
     unsigned char actual[sizeof(engine_build_signature)] = {0};
@@ -351,4 +359,34 @@ static int engine_reset(HANDLE process, HWND window) {
         return 0;
 
     return applied;
+}
+
+static EngineResolution engine_get_resolution(HANDLE process) {
+    EngineResolution resolution = {0};
+
+    uint32_t object = 0;
+    if (!win32_read_memory(process, ENGINE_VIDEO_CONTEXT_ADDRESS, &object, sizeof(object)) || object < 0x10000)
+        return resolution;
+
+    uint32_t count = 0;
+    uint32_t modes = 0;
+    uint32_t index = 0;
+    if (!win32_read_memory(process, (uintptr_t)object + 0x1108, &count, sizeof(count)) || !win32_read_memory(process, (uintptr_t)object + 0x110C, &modes, sizeof(modes)) || !win32_read_memory(process, (uintptr_t)object + 0x1110, &index, sizeof(index)))
+        return resolution;
+
+    if (!count || count > 64 || index >= count || modes < 0x10000)
+        return resolution;
+
+    uint64_t address = (uint64_t)modes + (uint64_t)index * ENGINE_VIDEO_MODE_STRIDE + ENGINE_VIDEO_PRESENT_OFFSET;
+    if (address > UINT32_MAX - sizeof(resolution))
+        return resolution;
+
+    EngineResolution actual = {0};
+    if (!win32_read_memory(process, (uintptr_t)address, &actual, sizeof(actual)))
+        return resolution;
+
+    if (!actual.width || actual.width > 16384 || !actual.height || actual.height > 16384)
+        return resolution;
+
+    return actual;
 }
