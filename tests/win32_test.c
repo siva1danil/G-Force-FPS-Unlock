@@ -117,6 +117,25 @@ int win32_find_process_test(void) {
     return !pass;
 }
 
+int win32_find_window_test(void) {
+    DWORD pid = GetCurrentProcessId();
+
+    HWND window = CreateWindowExW(0, L"STATIC", L"Test Window", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 640, 480, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_find_window_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    HWND found = win32_find_window(pid);
+
+    DestroyWindow(window);
+
+    int pass = found == window;
+    printf("win32_find_window_test: expected = %p, found = %p\n", (void *)window, (void *)found);
+    printf("win32_find_window_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -126,6 +145,7 @@ int main(void) {
     failed |= win32_allocate_free_memory_test();
     failed |= win32_open_close_process_test();
     failed |= win32_find_process_test();
+    failed |= win32_find_window_test();
 
     return failed;
 }

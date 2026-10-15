@@ -100,3 +100,36 @@ static DWORD win32_find_process(const wchar_t *name, int error_on_multiple) {
     CloseHandle(snapshot);
     return pid;
 }
+
+static HWND win32_find_window(DWORD pid) {
+    HWND desktop = GetDesktopWindow();
+    HWND hwnd = NULL;
+    HWND best = NULL;
+    uint64_t max_area = 0;
+
+    while ((hwnd = FindWindowExW(desktop, hwnd, NULL, NULL))) {
+        DWORD owner = 0;
+        GetWindowThreadProcessId(hwnd, &owner);
+
+        if (owner != pid || !IsWindowVisible(hwnd))
+            continue;
+
+        RECT rect = {0};
+        if (!GetWindowRect(hwnd, &rect))
+            continue;
+
+        int64_t width = (int64_t)rect.right - rect.left;
+        int64_t height = (int64_t)rect.bottom - rect.top;
+
+        if (width <= 0 || height <= 0)
+            continue;
+
+        uint64_t area = (uint64_t)width * height;
+        if (area > max_area) {
+            max_area = area;
+            best = hwnd;
+        }
+    }
+
+    return best;
+}
