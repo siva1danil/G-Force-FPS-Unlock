@@ -204,6 +204,19 @@ static int win32_get_display_modes(const wchar_t *device, Win32DisplayMode **mod
     return total > 0;
 }
 
+static int win32_get_current_display_mode(const wchar_t *device, Win32DisplayMode *mode) {
+    DEVMODEW settings = {0};
+    settings.dmSize = sizeof(settings);
+
+    if (!EnumDisplaySettingsW(device, ENUM_CURRENT_SETTINGS, &settings))
+        return 0;
+
+    mode->width = settings.dmPelsWidth;
+    mode->height = settings.dmPelsHeight;
+    mode->frequency = settings.dmDisplayFrequency;
+    return 1;
+}
+
 static int win32_window_belongs_to_process(HANDLE process, HWND window) {
     DWORD process_id = GetProcessId(process);
     DWORD window_id = 0;
