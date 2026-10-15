@@ -203,3 +203,25 @@ static int win32_get_display_modes(const wchar_t *device, Win32DisplayMode **mod
     *count = total;
     return total > 0;
 }
+
+static int win32_window_belongs_to_process(HANDLE process, HWND window) {
+    DWORD process_id = GetProcessId(process);
+    DWORD window_id = 0;
+
+    if (!process_id || !GetWindowThreadProcessId(window, &window_id))
+        return 0;
+
+    return process_id == window_id;
+}
+
+static UINT win32_register_message(const wchar_t *name) {
+    return RegisterWindowMessageW(name);
+}
+
+static int win32_post_message(HWND window, UINT message) {
+    return PostMessageW(window, message, 0, 0) != 0;
+}
+
+static DWORD win32_wait_process(HANDLE process, DWORD timeout_ms) {
+    return WaitForSingleObject(process, timeout_ms);
+}
