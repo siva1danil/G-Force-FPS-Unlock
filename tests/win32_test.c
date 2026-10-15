@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <wchar.h>
 
 #include "../src/win32.c"
 
@@ -96,6 +97,26 @@ int win32_open_close_process_test(void) {
     return !pass;
 }
 
+int win32_find_process_test(void) {
+    wchar_t path[MAX_PATH];
+    DWORD length = GetModuleFileNameW(NULL, path, MAX_PATH);
+    if (length == 0 || length >= MAX_PATH) {
+        printf("win32_find_process_test: GetModuleFileNameW failed\n");
+        return 1;
+    }
+
+    wchar_t *name = wcsrchr(path, L'\\');
+    name = name ? name + 1 : path;
+
+    DWORD expected = GetCurrentProcessId();
+    DWORD actual = win32_find_process(name, 1);
+
+    int pass = actual == expected;
+    printf("win32_find_process_test: expected = %lu, actual = %lu\n", (unsigned long)expected, (unsigned long)actual);
+    printf("win32_find_process_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -104,6 +125,7 @@ int main(void) {
     failed |= win32_write_code_test();
     failed |= win32_allocate_free_memory_test();
     failed |= win32_open_close_process_test();
+    failed |= win32_find_process_test();
 
     return failed;
 }

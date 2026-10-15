@@ -7,6 +7,8 @@
 #include <string.h>
 #include <windows.h>
 
+#include <tlhelp32.h>
+
 static int win32_read_memory(HANDLE process, uintptr_t address, void *buffer, SIZE_T size) {
     SIZE_T bytes_read = 0;
     BOOL success = ReadProcessMemory(process, (LPCVOID)address, buffer, size, &bytes_read);
@@ -67,4 +69,34 @@ static HANDLE win32_open_process(DWORD pid, int writable) {
 
 static int win32_close_process(HANDLE process) {
     return CloseHandle(process) != 0;
+}
+
+static DWORD win32_find_process(const wchar_t *name, int error_on_multiple) {
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return 0;
+
+    PROCESSENTRY32W entry = {0};
+    DWORD pid = 0;
+    entry.dwSize = sizeof(entry);
+
+    if (Process32FirstW(snapshot, &entry)) {
+        do {
+            if (lstrcmpiW(entry.szExeFile, name) != 0)
+                continue;
+
+            if (!error_on_multiple) {
+                pid = entry.th32ProcessID;
+                break;
+            } else if (error_on_multiple && pid) {
+                pid = 0;
+                break;
+            } else if (error_on_multiple && !pid) {
+                pid = entry.th32ProcessID;
+            }
+        } while (Process32NextW(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return pid;
 }
