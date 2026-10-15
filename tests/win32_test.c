@@ -136,6 +136,27 @@ int win32_find_window_test(void) {
     return !pass;
 }
 
+int win32_set_topmost_test(void) {
+    HWND window = CreateWindowExW(0, L"STATIC", L"Topmost Test", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 640, 480, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_set_topmost_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    int before = (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+    int enabled = win32_set_topmost(window, 1);
+    int topmost = (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+    int disabled = win32_set_topmost(window, 0);
+    int after = (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+
+    DestroyWindow(window);
+
+    int pass = !before && enabled && topmost && disabled && !after;
+    printf("win32_set_topmost_test: before = %d, enabled = %d, topmost = %d, disabled = %d, after = %d\n", before, enabled, topmost, disabled, after);
+    printf("win32_set_topmost_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int win32_get_monitor_info_test(void) {
     HWND window = CreateWindowExW(0, L"STATIC", L"Monitor Test", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 640, 480, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!window) {
@@ -186,6 +207,7 @@ int main(void) {
     failed |= win32_open_close_process_test();
     failed |= win32_find_process_test();
     failed |= win32_find_window_test();
+    failed |= win32_set_topmost_test();
     failed |= win32_get_monitor_info_test();
     failed |= win32_get_display_modes_test();
 

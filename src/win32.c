@@ -134,6 +134,19 @@ static HWND win32_find_window(DWORD pid) {
     return best;
 }
 
+static int win32_set_topmost(HWND window, int is_topmost) {
+    if (!IsWindow(window))
+        return 0;
+
+    int current = (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+    if (current == (is_topmost != 0))
+        return 1;
+
+    HWND placement = is_topmost ? HWND_TOPMOST : HWND_NOTOPMOST;
+    UINT flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE;
+    return SetWindowPos(window, placement, 0, 0, 0, 0, flags) != 0;
+}
+
 static int win32_get_monitor_info(HWND window, MONITORINFOEXW *info) {
     HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
     if (!monitor)
