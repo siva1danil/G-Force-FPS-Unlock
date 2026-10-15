@@ -144,3 +144,62 @@ static int win32_get_monitor_info(HWND window, MONITORINFOEXW *info) {
 
     return GetMonitorInfoW(monitor, (MONITORINFO *)info) != 0;
 }
+
+typedef struct {
+    DWORD width;
+    DWORD height;
+    DWORD frequency;
+} Win32DisplayMode;
+
+static int win32_get_display_modes(const wchar_t *device, Win32DisplayMode **modes, size_t *count) {
+    *modes = NULL;
+    *count = 0;
+
+    DEVMODEW current = {0};
+    current.dmSize = sizeof(current);
+
+    if (!EnumDisplaySettingsW(device, ENUM_CURRENT_SETTINGS, &current))
+        return 0;
+
+    Win32DisplayMode *result = NULL;
+    size_t total = 0;
+
+    for (DWORD index = 0;; index++) {
+        DEVMODEW mode = {0};
+        mode.dmSize = sizeof(mode);
+
+        if (!EnumDisplaySettingsW(device, index, &mode))
+            break;
+
+        if (mode.dmBitsPerPel != current.dmBitsPerPel || mode.dmDisplayFrequency <= 1)
+            continue;
+
+        int duplicate = 0;
+
+        for (size_t i = 0; i < total; i++) {
+            if (result[i].width == mode.dmPelsWidth && result[i].height == mode.dmPelsHeight && result[i].frequency == mode.dmDisplayFrequency) {
+                duplicate = 1;
+                break;
+            }
+        }
+
+        if (duplicate)
+            continue;
+
+        Win32DisplayMode *next = realloc(result, (total + 1) * sizeof(*result));
+        if (!next) {
+            free(result);
+            return 0;
+        }
+
+        result = next;
+        result[total].width = mode.dmPelsWidth;
+        result[total].height = mode.dmPelsHeight;
+        result[total].frequency = mode.dmDisplayFrequency;
+        total++;
+    }
+
+    *modes = result;
+    *count = total;
+    return total > 0;
+}

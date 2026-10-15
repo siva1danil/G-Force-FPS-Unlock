@@ -154,6 +154,27 @@ int win32_get_monitor_info_test(void) {
     return !pass;
 }
 
+int win32_get_display_modes_test(void) {
+    MONITORINFOEXW monitor = {0};
+    if (!win32_get_monitor_info(GetDesktopWindow(), &monitor)) {
+        printf("win32_get_display_modes_test: win32_get_monitor_info failed\n");
+        return 1;
+    }
+
+    Win32DisplayMode *modes = NULL;
+    size_t count = 0;
+
+    int success = win32_get_display_modes(monitor.szDevice, &modes, &count);
+    for (size_t i = 0; i < count; i++)
+        printf("%lu x %lu @ %lu Hz\n", (unsigned long)modes[i].width, (unsigned long)modes[i].height, (unsigned long)modes[i].frequency);
+    free(modes);
+
+    int pass = success && count > 0;
+    printf("win32_get_display_modes_test: count = %zu\n", count);
+    printf("win32_get_display_modes_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -165,6 +186,7 @@ int main(void) {
     failed |= win32_find_process_test();
     failed |= win32_find_window_test();
     failed |= win32_get_monitor_info_test();
+    failed |= win32_get_display_modes_test();
 
     return failed;
 }
