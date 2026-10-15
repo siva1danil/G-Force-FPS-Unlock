@@ -167,6 +167,7 @@ int win32_get_display_modes_test(void) {
     int success = win32_get_display_modes(monitor.szDevice, &modes, &count);
     for (size_t i = 0; i < count; i++)
         printf("%lu x %lu @ %lu Hz\n", (unsigned long)modes[i].width, (unsigned long)modes[i].height, (unsigned long)modes[i].frequency);
+
     free(modes);
 
     int pass = success && count > 0;
