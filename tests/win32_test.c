@@ -197,6 +197,88 @@ int win32_get_display_modes_test(void) {
     return !pass;
 }
 
+int win32_get_current_display_mode_test(void) {
+    MONITORINFOEXW monitor = {0};
+    if (!win32_get_monitor_info(GetDesktopWindow(), &monitor)) {
+        printf("win32_get_current_display_mode_test: monitor not found\n");
+        return 1;
+    }
+
+    Win32DisplayMode mode = {0};
+    int success = win32_get_current_display_mode(monitor.szDevice, &mode);
+
+    int pass = success && mode.width > 0 && mode.height > 0 && mode.frequency > 1;
+    printf("win32_get_current_display_mode_test: %lu x %lu @ %lu Hz\n", (unsigned long)mode.width, (unsigned long)mode.height, (unsigned long)mode.frequency);
+    printf("win32_get_current_display_mode_test: pass = %d\n", pass);
+    return !pass;
+}
+
+int win32_window_belongs_to_process_test(void) {
+    HWND window = CreateWindowExW(0, L"STATIC", L"Ownership Test", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 320, 240, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_window_belongs_to_process_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    int owned = win32_window_belongs_to_process(GetCurrentProcess(), window);
+    int null_rejected = !win32_window_belongs_to_process(GetCurrentProcess(), NULL);
+
+    DestroyWindow(window);
+
+    int pass = owned && null_rejected;
+    printf("win32_window_belongs_to_process_test: owned = %d, null_rejected = %d\n", owned, null_rejected);
+    printf("win32_window_belongs_to_process_test: pass = %d\n", pass);
+    return !pass;
+}
+
+int win32_register_message_test(void) {
+    UINT first = win32_register_message(L"GForceWin32_RegisterMessage_Test");
+    UINT second = win32_register_message(L"GForceWin32_RegisterMessage_Test");
+
+    int pass = first != 0 && first == second;
+    printf("win32_register_message_test: first = %u, second = %u\n", first, second);
+    printf("win32_register_message_test: pass = %d\n", pass);
+    return !pass;
+}
+
+int win32_post_message_test(void) {
+    HWND window = CreateWindowExW(0, L"STATIC", L"Message Test", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 320, 240, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_post_message_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    UINT id = win32_register_message(L"GForceWin32_PostMessage_Test");
+    int posted = id && win32_post_message(window, id);
+    MSG message = {0};
+    int received = posted && PeekMessageW(&message, window, id, id, PM_REMOVE);
+
+    DestroyWindow(window);
+
+    int pass = posted && received && message.hwnd == window && message.message == id;
+    printf("win32_post_message_test: posted = %d, received = %d\n", posted, received);
+    printf("win32_post_message_test: pass = %d\n", pass);
+    return !pass;
+}
+
+int win32_wait_process_test(void) {
+    HANDLE event = CreateEventW(NULL, TRUE, TRUE, NULL);
+    if (!event) {
+        printf("win32_wait_process_test: CreateEventW failed\n");
+        return 1;
+    }
+
+    DWORD running = win32_wait_process(GetCurrentProcess(), 0);
+    DWORD signaled = win32_wait_process(event, 0);
+
+    CloseHandle(event);
+
+    int pass = running == WAIT_TIMEOUT && signaled == WAIT_OBJECT_0;
+    printf("win32_wait_process_test: running = %lu, signaled = %lu\n", (unsigned long)running, (unsigned long)signaled);
+    printf("win32_wait_process_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -210,6 +292,11 @@ int main(void) {
     failed |= win32_set_topmost_test();
     failed |= win32_get_monitor_info_test();
     failed |= win32_get_display_modes_test();
+    failed |= win32_get_current_display_mode_test();
+    failed |= win32_window_belongs_to_process_test();
+    failed |= win32_register_message_test();
+    failed |= win32_post_message_test();
+    failed |= win32_wait_process_test();
 
     return failed;
 }
