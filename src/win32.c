@@ -2,10 +2,10 @@
 #define UNICODE
 #define _UNICODE
 
-#include <windows.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 static int win32_read_memory(HANDLE process, uintptr_t address, void *buffer, SIZE_T size) {
     SIZE_T bytes_read = 0;
@@ -46,4 +46,12 @@ static int win32_write_code(HANDLE process, uintptr_t address, const void *buffe
 
     free(verify_buffer);
     return written && flushed && verified;
+}
+
+static uintptr_t win32_allocate_memory(HANDLE process, SIZE_T size, DWORD protection) {
+    return (uintptr_t)VirtualAllocEx(process, NULL, size, MEM_RESERVE | MEM_COMMIT, protection);
+}
+
+static int win32_free_memory(HANDLE process, uintptr_t address) {
+    return VirtualFreeEx(process, (LPVOID)address, 0, MEM_RELEASE) != 0;
 }
