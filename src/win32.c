@@ -133,3 +133,14 @@ static HWND win32_find_window(DWORD pid) {
 
     return best;
 }
+
+static int win32_get_monitor_info(HWND window, MONITORINFOEXW *info) {
+    HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+    if (!monitor)
+        return 0;
+
+    *info = (MONITORINFOEXW){0};
+    info->cbSize = sizeof(*info);
+
+    return GetMonitorInfoW(monitor, (MONITORINFO *)info) != 0;
+}

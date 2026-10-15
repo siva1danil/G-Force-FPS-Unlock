@@ -136,6 +136,24 @@ int win32_find_window_test(void) {
     return !pass;
 }
 
+int win32_get_monitor_info_test(void) {
+    HWND window = CreateWindowExW(0, L"STATIC", L"Monitor Test", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 640, 480, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_get_monitor_info_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    MONITORINFOEXW info = {0};
+    int success = win32_get_monitor_info(window, &info);
+
+    DestroyWindow(window);
+
+    int pass = success && info.szDevice[0] != L'\0' && info.rcMonitor.right > info.rcMonitor.left && info.rcMonitor.bottom > info.rcMonitor.top;
+    printf("win32_get_monitor_info_test: monitor = %ls\n", info.szDevice);
+    printf("win32_get_monitor_info_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -146,6 +164,7 @@ int main(void) {
     failed |= win32_open_close_process_test();
     failed |= win32_find_process_test();
     failed |= win32_find_window_test();
+    failed |= win32_get_monitor_info_test();
 
     return failed;
 }
