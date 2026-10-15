@@ -55,3 +55,16 @@ static uintptr_t win32_allocate_memory(HANDLE process, SIZE_T size, DWORD protec
 static int win32_free_memory(HANDLE process, uintptr_t address) {
     return VirtualFreeEx(process, (LPVOID)address, 0, MEM_RELEASE) != 0;
 }
+
+static HANDLE win32_open_process(DWORD pid, int writable) {
+    DWORD access = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE;
+
+    if (writable)
+        access |= PROCESS_VM_WRITE | PROCESS_VM_OPERATION;
+
+    return OpenProcess(access, FALSE, pid);
+}
+
+static int win32_close_process(HANDLE process) {
+    return CloseHandle(process) != 0;
+}

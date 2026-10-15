@@ -75,6 +75,27 @@ int win32_allocate_free_memory_test(void) {
     return !pass;
 }
 
+int win32_open_close_process_test(void) {
+    DWORD pid = GetCurrentProcessId();
+
+    HANDLE process = win32_open_process(pid, 1);
+    if (!process) {
+        printf("win32_open_close_process_test: win32_open_process failed\n");
+        return 1;
+    }
+
+    uint32_t source = 144;
+    uint32_t destination = 0;
+
+    int read_success = win32_read_memory(process, (uintptr_t)&source, &destination, sizeof(destination));
+    int close_success = win32_close_process(process);
+
+    int pass = read_success && close_success && source == destination;
+    printf("win32_open_close_process_test: read_success = %d, close_success = %d, source = %u, destination = %u\n", read_success, close_success, source, destination);
+    printf("win32_open_close_process_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
@@ -82,6 +103,7 @@ int main(void) {
     failed |= win32_write_memory_test();
     failed |= win32_write_code_test();
     failed |= win32_allocate_free_memory_test();
+    failed |= win32_open_close_process_test();
 
     return failed;
 }
