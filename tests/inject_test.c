@@ -47,11 +47,45 @@ int inject_create_cave_test(void) {
     return !pass;
 }
 
+int inject_install_hook_test(void) {
+    HANDLE process = GetCurrentProcess();
+    unsigned char original[] = {0xB8, 0x2A, 0x00, 0x00, 0x00, 0xC3};
+    unsigned char payload[] = {0xB8, 0x2B, 0x00, 0x00, 0x00};
+
+    uintptr_t source = inject_create_cave(process, original, sizeof(original));
+    if (!source) {
+        printf("inject_install_hook_test: source allocation failed\n");
+        return 1;
+    }
+
+    typedef int (*TestFunction)(void);
+    TestFunction function = (TestFunction)source;
+
+    int before = function();
+    uintptr_t cave = inject_install_hook(process, source, 5, payload, sizeof(payload));
+    if (!cave) {
+        win32_free_memory(process, source);
+        printf("inject_install_hook_test: hook installation failed\n");
+        return 1;
+    }
+    int after = function();
+
+    win32_write_code(process, source, original, 5);
+    win32_free_memory(process, cave);
+    win32_free_memory(process, source);
+
+    int pass = before == 42 && after == 43;
+    printf("inject_install_hook_test: before = %d, after = %d\n", before, after);
+    printf("inject_install_hook_test: pass = %d\n", pass);
+    return !pass;
+}
+
 int main(void) {
     int failed = 0;
 
     failed |= inject_write_jump_test();
     failed |= inject_create_cave_test();
+    failed |= inject_install_hook_test();
 
     return failed;
 }
