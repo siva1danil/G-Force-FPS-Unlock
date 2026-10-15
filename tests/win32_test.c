@@ -197,19 +197,23 @@ int win32_get_display_modes_test(void) {
     return !pass;
 }
 
-int win32_get_current_display_mode_test(void) {
+int win32_get_desktop_display_mode_test(void) {
     MONITORINFOEXW monitor = {0};
-    if (!win32_get_monitor_info(GetDesktopWindow(), &monitor)) {
-        printf("win32_get_current_display_mode_test: monitor not found\n");
+    if (!win32_get_monitor_info(GetDesktopWindow(), &monitor))
+        return 1;
+
+    DEVMODEW registry = {0};
+    registry.dmSize = sizeof(registry);
+    if (!EnumDisplaySettingsW(monitor.szDevice, ENUM_REGISTRY_SETTINGS, &registry)) {
+        printf("win32_get_desktop_display_mode_test: EnumDisplaySettingsW failed\n");
         return 1;
     }
 
     Win32DisplayMode mode = {0};
-    int success = win32_get_current_display_mode(monitor.szDevice, &mode);
+    int success = win32_get_desktop_display_mode(monitor.szDevice, &mode);
 
-    int pass = success && mode.width > 0 && mode.height > 0 && mode.frequency > 1;
-    printf("win32_get_current_display_mode_test: %lu x %lu @ %lu Hz\n", (unsigned long)mode.width, (unsigned long)mode.height, (unsigned long)mode.frequency);
-    printf("win32_get_current_display_mode_test: pass = %d\n", pass);
+    int pass = success && registry.dmDisplayFrequency > 1 && mode.width == registry.dmPelsWidth && mode.height == registry.dmPelsHeight && mode.frequency == registry.dmDisplayFrequency;
+    printf("win32_get_desktop_display_mode_test: %lu x %lu @ %lu Hz; pass = %d\n", (unsigned long)mode.width, (unsigned long)mode.height, (unsigned long)mode.frequency, pass);
     return !pass;
 }
 
@@ -292,7 +296,7 @@ int main(void) {
     failed |= win32_set_topmost_test();
     failed |= win32_get_monitor_info_test();
     failed |= win32_get_display_modes_test();
-    failed |= win32_get_current_display_mode_test();
+    failed |= win32_get_desktop_display_mode_test();
     failed |= win32_window_belongs_to_process_test();
     failed |= win32_register_message_test();
     failed |= win32_post_message_test();

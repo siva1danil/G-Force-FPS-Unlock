@@ -217,12 +217,16 @@ static int win32_get_display_modes(const wchar_t *device, Win32DisplayMode **mod
     return total > 0;
 }
 
-static int win32_get_current_display_mode(const wchar_t *device, Win32DisplayMode *mode) {
+static int win32_get_desktop_display_mode(const wchar_t *device, Win32DisplayMode *mode) {
     DEVMODEW settings = {0};
     settings.dmSize = sizeof(settings);
 
-    if (!EnumDisplaySettingsW(device, ENUM_CURRENT_SETTINGS, &settings))
-        return 0;
+    if (!EnumDisplaySettingsW(device, ENUM_REGISTRY_SETTINGS, &settings) || settings.dmDisplayFrequency <= 1) {
+        settings = (DEVMODEW){0};
+        settings.dmSize = sizeof(settings);
+        if (!EnumDisplaySettingsW(device, ENUM_CURRENT_SETTINGS, &settings))
+            return 0;
+    }
 
     mode->width = settings.dmPelsWidth;
     mode->height = settings.dmPelsHeight;
