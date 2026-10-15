@@ -120,7 +120,7 @@ static int cli_apply(CliGame *game, int borderless, uint32_t fps, int reset_now)
         return 0;
     }
     if (borderless && (game->video->width != game->desktop.width || game->video->height != game->desktop.height))
-        puts("Game buffer differs from desktop size; select the desktop resolution in game.");
+        puts("Game resolution differs from desktop; the image may be scaled.");
 
     if (!game_set_video_mode(game->process, game->window, borderless, fps)) {
         puts("Failed to configure video mode.");
@@ -134,9 +134,15 @@ static int cli_apply(CliGame *game, int borderless, uint32_t fps, int reset_now)
         puts("Failed to set FPS.");
         return 0;
     }
-    if (borderless && reset_now && !win32_set_topmost(game->window, 0)) {
-        puts("Borderless applied, but failed to remove TOPMOST.");
-        return 0;
+    if (borderless && reset_now) {
+        if (!win32_fit_window_to_monitor(game->window)) {
+            puts("Borderless applied, but failed to fill the monitor.");
+            return 0;
+        }
+        if (!win32_set_topmost(game->window, 0)) {
+            puts("Borderless applied, but failed to remove TOPMOST.");
+            return 0;
+        }
     }
 
     const char *old = game->video->is_borderless ? "borderless" : game->video->is_patched ? "fullscreen"

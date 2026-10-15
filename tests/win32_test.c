@@ -175,6 +175,22 @@ int win32_get_monitor_info_test(void) {
     return !pass;
 }
 
+int win32_fit_window_to_monitor_test(void) {
+    HWND window = CreateWindowExW(0, L"STATIC", L"Fit Test", WS_POPUP, 100, 100, 320, 240, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (!window) {
+        printf("win32_fit_window_to_monitor_test: CreateWindowExW failed\n");
+        return 1;
+    }
+
+    MONITORINFOEXW monitor = {0};
+    RECT actual = {0};
+
+    int pass = win32_get_monitor_info(window, &monitor) && win32_fit_window_to_monitor(window) && win32_fit_window_to_monitor(window) && GetWindowRect(window, &actual) && EqualRect(&actual, &monitor.rcMonitor) && !win32_fit_window_to_monitor(NULL);
+    printf("win32_fit_window_to_monitor_test: pass = %d\n", pass);
+    DestroyWindow(window);
+    return !pass;
+}
+
 int win32_get_display_modes_test(void) {
     MONITORINFOEXW monitor = {0};
     if (!win32_get_monitor_info(GetDesktopWindow(), &monitor)) {
@@ -295,6 +311,7 @@ int main(void) {
     failed |= win32_find_window_test();
     failed |= win32_set_topmost_test();
     failed |= win32_get_monitor_info_test();
+    failed |= win32_fit_window_to_monitor_test();
     failed |= win32_get_display_modes_test();
     failed |= win32_get_desktop_display_mode_test();
     failed |= win32_window_belongs_to_process_test();

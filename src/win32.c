@@ -158,6 +158,19 @@ static int win32_get_monitor_info(HWND window, MONITORINFOEXW *info) {
     return GetMonitorInfoW(monitor, (MONITORINFO *)info) != 0;
 }
 
+static int win32_fit_window_to_monitor(HWND window) {
+    MONITORINFOEXW monitor = {0};
+    RECT current = {0};
+    if (!win32_get_monitor_info(window, &monitor) || !GetWindowRect(window, &current))
+        return 0;
+
+    RECT bounds = monitor.rcMonitor;
+    if (EqualRect(&current, &bounds))
+        return 1;
+
+    return SetWindowPos(window, NULL, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, SWP_NOZORDER | SWP_NOACTIVATE) != 0;
+}
+
 typedef struct {
     DWORD width;
     DWORD height;
