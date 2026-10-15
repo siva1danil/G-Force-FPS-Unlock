@@ -27,12 +27,19 @@ Unlock FPS and switch between borderless and fullscreen. Only the running game i
    ```text
    G-Force FPS Unlock
 
-   [ 1] Switch to Borderless Fullscreen @ desktop FPS (recommended)
-   [ 2] Switch to Fullscreen @ 59 FPS
-   [ 3] Switch to Fullscreen @ 60 FPS
-   [ 4] Switch to Fullscreen @ 120 FPS
-   [ 5] Switch to Fullscreen @ 144 FPS
-   [ 6] Switch to Fullscreen @ 165 FPS
+   GForce.exe PID=21540
+   Mode: patched fullscreen (800 x 600 @ 59 FPS, 59 Hz)
+
+   [ 1] Borderless Fullscreen @ native FPS (recommended)
+   [ 2] Fullscreen @ 56 FPS
+   [ 3] Fullscreen @ 60 FPS
+   [ 4] Fullscreen @ 72 FPS
+   [ 5] Fullscreen @ 75 FPS
+   [ 6] Fullscreen @ 100 FPS
+   [ 7] Fullscreen @ 119 FPS
+   [ 8] Fullscreen @ 120 FPS
+   [ 9] Fullscreen @ 144 FPS
+   [10] Fullscreen @ 165 FPS
    [ 0] Exit
 
    > 1
@@ -43,17 +50,10 @@ Unlock FPS and switch between borderless and fullscreen. Only the running game i
    [ 0] No
 
    > 1
+   Game resolution differs from desktop; the image may be scaled.
 
-   Run FPS/TOPMOST watch to prevent game changing the settings?
-
-   [ 1] Yes
-   [ 0] No (recommended unless there are problems)
-
-   > 0
-
-   Switched from fullscreen@60 to borderless@165.
-   Watch disabled - consider using it if FPS/TOPMOST gets changed during gameplay.
-   Video mode applied automatically; no resolution change needed.
+   Switched from fullscreen@59 to borderless@165.
+   Game reported a successful video reset.
    ```
 
 ## Download
