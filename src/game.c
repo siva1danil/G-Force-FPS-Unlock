@@ -54,6 +54,12 @@ static int game_set_video_mode(HANDLE process, HWND window, int is_borderless, u
         return 0;
     if (!engine_set_video_mode(process, is_borderless, refresh_hz))
         return 0;
+    return 1;
+}
+
+static int game_reset(HANDLE process, HWND window) {
+    if (!engine_verify_build(process))
+        return 0;
     if (!engine_reset(process, window))
         return 0;
     return 1;
